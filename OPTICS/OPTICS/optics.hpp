@@ -36,187 +36,33 @@
 namespace OPTICS {
 
 
-
-    // FUNCTION DECLARATIONS ######################################################################
-
-    // non-callback version
-    DataVector optics( DataVector& db, const real eps, const unsigned int min_pts);
-    void expand_cluster_order( DataVector& db, DataPoint* p, const real eps, const unsigned int min_pts, DataVector& o_ordered_vector);
-    
-    // callback version
-    DataVector optics( DataVector& db, 
-                       const real eps, 
-                       const unsigned int min_pts,
-                       std::function<void(const DataPoint* p)> point_processed_callback);
-    void expand_cluster_order( DataVector& db, 
-                               DataPoint* p, 
-                               const real eps, 
-                               const unsigned int min_pts, 
-                               DataVector& o_ordered_vector, 
-                               std::function<void(const DataPoint* p)> point_processed_callback);
-    
-    // utility functions
-    std::vector<DataVector> extract_clusters( const DataVector& result, const std::vector<unsigned int>& cluster_borders, real outlier_threshold);
-
-    // helpers
-    void update_seeds( const DataVector& N_eps, const DataPoint* center_object, const real c_dist, DataSet& o_seeds);
-    DataVector get_neighbors( const DataPoint* p, const real eps, DataVector& db);
-    real squared_core_distance( const DataPoint* p, const unsigned int min_pts, DataVector& N_eps);
-    real squared_distance( const DataPoint* a, const DataPoint* b);
-    
-
-
-    // NON-CALLBACK VERSION #######################################################################
-
-
-    /** Performs the classic OPTICS algorithm.
-     * @param db All data points that are to be considered by the algorithm. Changes their values.
-     * @param eps The epsilon representing the radius of the epsilon-neighborhood.
-     * @param min_pts The minimum number of points to be found within an epsilon-neigborhood.
-     * @return Return the OPTICS ordered list of Data points with reachability-distances set.
-     */
-    DataVector optics( DataVector& db, const real eps, const unsigned int min_pts) {
-        assert( eps >= 0 && "eps must not be negative");
-        assert( min_pts > 0 && "min_pts must be greater than 0");
-        DataVector ret;
-
-        for( auto p_it = db.begin(); p_it != db.end(); ++p_it) {
-            DataPoint* p = *p_it;
-            
-            if( p->is_processed())
-                continue;
-            
-            expand_cluster_order( db, p, eps, min_pts, ret);
-        }
-        return ret;
-    }
-
-
-    /** Expands the cluster order while adding new neighbor points to the order.
-     * @param db All data points that are to be considered by the algorithm. Changes their values.
-     * @param p The point to be examined.
-     * @param eps The epsilon representing the radius of the epsilon-neighborhood.
-     * @param min_pts The minimum number of points to be found within an epsilon-neigborhood.
-     * @param o_ordered_vector The ordered vector of data points. Elements will be added to this vector.
-     */
-    void expand_cluster_order( DataVector& db, DataPoint* p, const real eps, const unsigned int min_pts, DataVector& o_ordered_vector) {
-        assert( eps >= 0 && "eps must not be negative");
-        assert( min_pts > 0 && "min_pts must be greater than 0");
-        
-        DataVector N_eps = get_neighbors( p, eps, db);
-        p->reachability_distance( OPTICS::UNDEFINED);
-        const real core_dist_p = squared_core_distance( p, min_pts, N_eps);
-        p->processed( true);
-        o_ordered_vector.push_back( p);
-    
-        if( core_dist_p == OPTICS::UNDEFINED)
-            return;
-
-        DataSet seeds;
-        update_seeds( N_eps, p, core_dist_p, seeds);
-        
-        while( !seeds.empty()) {
-            DataPoint* q = *seeds.begin();
-            seeds.erase( seeds.begin()); // remove first element from seeds
-
-            DataVector N_q = get_neighbors( q, eps, db);
-            const real core_dist_q = squared_core_distance( q, min_pts, N_q);
-            q->processed( true);
-            o_ordered_vector.push_back( q);
-            if( core_dist_q != OPTICS::UNDEFINED) {
-                // *** q is a core-object ***
-                update_seeds( N_q, q, core_dist_q, seeds);
-            }
-        }
-    }
-
-
-
-    // CALLBACK VERSION ###########################################################################
-
-
-    /** Performs the classic OPTICS algorithm.
-     * Because OPTICS can take a while on big data sets or when working with high dimensions,
-     * a callback function informs you when a new point is inserted into the OPTICS ordering.
-     * @param db All data points that are to be considered by the algorithm. Changes their values.
-     * @param eps The epsilon representing the radius of the epsilon-neighborhood.
-     * @param min_pts The minimum number of points to be found within an epsilon-neigborhood.
-     * @param point_processed_callback Callback function that is called when one point is 
-     *        added to the ordered output list. It takes the pointer to the data point as an argument.
-     * @return Return the OPTICS ordered list of Data points with reachability-distances set.
-     */
-    DataVector optics( DataVector& db, 
-                       const real eps, 
-                       const unsigned int min_pts, 
-                       std::function<void(const DataPoint* p)> point_processed_callback) {
-        assert( eps >= 0 && "eps must not be negative");
-        assert( min_pts > 0 && "min_pts must be greater than 0");
-        DataVector ret;
-
-        for( auto p_it = db.begin(); p_it != db.end(); ++p_it) {
-            DataPoint* p = *p_it;
-            
-            if( p->is_processed())
-                continue;
-            
-            expand_cluster_order( db, p, eps, min_pts, ret, point_processed_callback);
-        }
-        return ret;
-    }
-
-
-    /** Expands the cluster order while adding new neighbor points to the order.
-     * Because OPTICS can take a while on big data sets or when working with high dimensions,
-     * a callback function informs you when a new point is inserted into the OPTICS ordering.
-     * @param db All data points that are to be considered by the algorithm. Changes their values.
-     * @param p The point to be examined.
-     * @param eps The epsilon representing the radius of the epsilon-neighborhood.
-     * @param min_pts The minimum number of points to be found within an epsilon-neigborhood.
-     * @param o_ordered_vector The ordered vector of data points. Elements will be added to this vector.
-     * @param point_processed_callback Callback function that is called when one point is 
-     *        added to the ordered output list. It takes the pointer to the data point as an argument.
-     */
-    void expand_cluster_order( DataVector& db,
-                               DataPoint* p, 
-                               const real eps,
-                               const unsigned int min_pts,
-                               DataVector& o_ordered_vector,
-                               std::function<void(const DataPoint* p)> point_processed_callback) {
-        assert( eps >= 0 && "eps must not be negative");
-        assert( min_pts > 0 && "min_pts must be greater than 0");
-        
-        DataVector N_eps = get_neighbors( p, eps, db);
-        p->reachability_distance( OPTICS::UNDEFINED);
-        const real core_dist_p = squared_core_distance( p, min_pts, N_eps);
-        p->processed( true);
-        o_ordered_vector.push_back( p);
-        point_processed_callback( p);
-    
-        if( core_dist_p == OPTICS::UNDEFINED)
-            return;
-
-        DataSet seeds;
-        update_seeds( N_eps, p, core_dist_p, seeds);
-        
-        while( !seeds.empty()) {
-            DataPoint* q = *seeds.begin();
-            seeds.erase( seeds.begin()); // remove first element from seeds
-
-            DataVector N_q = get_neighbors( q, eps, db);
-            const real core_dist_q = squared_core_distance( q, min_pts, N_q);
-            q->processed( true);
-            o_ordered_vector.push_back( q);
-            point_processed_callback( p);
-            if( core_dist_q != OPTICS::UNDEFINED) {
-                // *** q is a core-object ***
-                update_seeds( N_q, q, core_dist_q, seeds);
-            }
-        }
-    }
-
-
     
     // HELPERS ####################################################################################
+
+
+
+
+    /** Retrieves the squared euclidean distance of two DataPoints.
+     * @param a The first DataPoint.
+     * @param b The second DataPoint. Both data points must have the same dimensionality.
+     */
+    real squared_distance(const DataPoint* a, const DataPoint* b) {
+        const std::vector<real>& a_data = a->data();
+        const std::vector<real>& b_data = b->data();
+        const unsigned int vec_size = static_cast<unsigned int>(a_data.size());
+        assert(vec_size == b_data.size() && "Data-vectors of both DataPoints must have same dimensionality");
+        real ret(0);
+
+        for (unsigned int i = 0; i < vec_size; ++i) {
+            ret += std::pow(a_data[i] - b_data[i], 2);
+        }
+        //return std::sqrt( ret);
+        return ret;
+    }
+
+
+
+
 
 
     /** Updates the seeds priority queue with new neighbors or neighbors that now have a better 
@@ -260,7 +106,7 @@ namespace OPTICS {
      * @param A vector of pointers to datapoints that lie within the epsilon-neighborhood 
      *        of the given point p, including p itself.
      */
-    DataVector get_neighbors( const DataPoint* p, const real eps, DataVector& db) {
+    DataVector get_neighbors( const DataPoint* p, const real eps, const DataVector& db) {
         assert( eps >= 0 && "eps must not be negative");
         DataVector ret;
 
@@ -294,25 +140,6 @@ namespace OPTICS {
 
             ret = squared_distance( p, N_eps[min_pts]);
         }
-        return ret;
-    }
-
-
-    /** Retrieves the squared euclidean distance of two DataPoints.
-     * @param a The first DataPoint.
-     * @param b The second DataPoint. Both data points must have the same dimensionality.
-     */
-    real squared_distance( const DataPoint* a, const DataPoint* b) {
-        const std::vector<real>& a_data = a->data();
-        const std::vector<real>& b_data = b->data();
-        const unsigned int vec_size = static_cast<unsigned int>(a_data.size());
-        assert( vec_size == b_data.size() && "Data-vectors of both DataPoints must have same dimensionality");
-        real ret(0);
-    
-        for( unsigned int i=0; i<vec_size; ++i) {
-            ret += std::pow( a_data[i]-b_data[i], 2);
-        }
-        //return std::sqrt( ret);
         return ret;
     }
 
@@ -374,6 +201,161 @@ namespace OPTICS {
                }
             }
             ret.push_back( cluster_i);
+        }
+        return ret;
+    }
+
+
+
+
+
+    /** Expands the cluster order while adding new neighbor points to the order.
+     * @param db All data points that are to be considered by the algorithm. Changes their values.
+     * @param p The point to be examined.
+     * @param eps The epsilon representing the radius of the epsilon-neighborhood.
+     * @param min_pts The minimum number of points to be found within an epsilon-neigborhood.
+     * @param o_ordered_vector The ordered vector of data points. Elements will be added to this vector.
+     */
+    void expand_cluster_order(const DataVector& db, DataPoint* p, const real eps, const unsigned int min_pts, DataVector& o_ordered_vector) {
+        assert(eps >= 0 && "eps must not be negative");
+        assert(min_pts > 0 && "min_pts must be greater than 0");
+
+        DataVector N_eps = get_neighbors(p, eps, db);
+        p->reachability_distance(OPTICS::UNDEFINED);
+        const real core_dist_p = squared_core_distance(p, min_pts, N_eps);
+        p->processed(true);
+        o_ordered_vector.push_back(p);
+
+        if (core_dist_p == OPTICS::UNDEFINED)
+            return;
+
+        DataSet seeds;
+        update_seeds(N_eps, p, core_dist_p, seeds);
+
+        while (!seeds.empty()) {
+            DataPoint* q = *seeds.begin();
+            seeds.erase(seeds.begin()); // remove first element from seeds
+
+            DataVector N_q = get_neighbors(q, eps, db);
+            const real core_dist_q = squared_core_distance(q, min_pts, N_q);
+            q->processed(true);
+            o_ordered_vector.push_back(q);
+            if (core_dist_q != OPTICS::UNDEFINED) {
+                // *** q is a core-object ***
+                update_seeds(N_q, q, core_dist_q, seeds);
+            }
+        }
+    }
+
+
+
+
+
+    /** Expands the cluster order while adding new neighbor points to the order.
+     * Because OPTICS can take a while on big data sets or when working with high dimensions,
+     * a callback function informs you when a new point is inserted into the OPTICS ordering.
+     * @param db All data points that are to be considered by the algorithm. Changes their values.
+     * @param p The point to be examined.
+     * @param eps The epsilon representing the radius of the epsilon-neighborhood.
+     * @param min_pts The minimum number of points to be found within an epsilon-neigborhood.
+     * @param o_ordered_vector The ordered vector of data points. Elements will be added to this vector.
+     * @param point_processed_callback Callback function that is called when one point is
+     *        added to the ordered output list. It takes the pointer to the data point as an argument.
+     */
+    void expand_cluster_order(const DataVector& db,
+        DataPoint* p,
+        const real eps,
+        const unsigned int min_pts,
+        DataVector& o_ordered_vector,
+        std::function<void(const DataPoint* p)> point_processed_callback) {
+        assert(eps >= 0 && "eps must not be negative");
+        assert(min_pts > 0 && "min_pts must be greater than 0");
+
+        DataVector N_eps = get_neighbors(p, eps, db);
+        p->reachability_distance(OPTICS::UNDEFINED);
+        const real core_dist_p = squared_core_distance(p, min_pts, N_eps);
+        p->processed(true);
+        o_ordered_vector.push_back(p);
+        point_processed_callback(p);
+
+        if (core_dist_p == OPTICS::UNDEFINED)
+            return;
+
+        DataSet seeds;
+        update_seeds(N_eps, p, core_dist_p, seeds);
+
+        while (!seeds.empty()) {
+            DataPoint* q = *seeds.begin();
+            seeds.erase(seeds.begin()); // remove first element from seeds
+
+            DataVector N_q = get_neighbors(q, eps, db);
+            const real core_dist_q = squared_core_distance(q, min_pts, N_q);
+            q->processed(true);
+            o_ordered_vector.push_back(q);
+            point_processed_callback(p);
+            if (core_dist_q != OPTICS::UNDEFINED) {
+                // *** q is a core-object ***
+                update_seeds(N_q, q, core_dist_q, seeds);
+            }
+        }
+    }
+
+
+
+
+    // NON-CALLBACK VERSION #######################################################################
+
+
+    /** Performs the classic OPTICS algorithm.
+     * @param db All data points that are to be considered by the algorithm. Changes their values.
+     * @param eps The epsilon representing the radius of the epsilon-neighborhood.
+     * @param min_pts The minimum number of points to be found within an epsilon-neigborhood.
+     * @return Return the OPTICS ordered list of Data points with reachability-distances set.
+     */
+    DataVector optics(DataVector& db, const real eps, const unsigned int min_pts) {
+        assert(eps >= 0 && "eps must not be negative");
+        assert(min_pts > 0 && "min_pts must be greater than 0");
+        DataVector ret;
+
+        for (auto p_it = db.begin(); p_it != db.end(); ++p_it) {
+            DataPoint* p = *p_it;
+
+            if (p->is_processed())
+                continue;
+
+            expand_cluster_order(db, p, eps, min_pts, ret);
+        }
+        return ret;
+    }
+
+    // CALLBACK VERSION ###########################################################################
+
+
+    /** Performs the classic OPTICS algorithm.
+     * Because OPTICS can take a while on big data sets or when working with high dimensions,
+     * a callback function informs you when a new point is inserted into the OPTICS ordering.
+     * @param db All data points that are to be considered by the algorithm. Changes their values.
+     * @param eps The epsilon representing the radius of the epsilon-neighborhood.
+     * @param min_pts The minimum number of points to be found within an epsilon-neigborhood.
+     * @param point_processed_callback Callback function that is called when one point is
+     *        added to the ordered output list. It takes the pointer to the data point as an argument.
+     * @return Return the OPTICS ordered list of Data points with reachability-distances set.
+     */
+    DataVector optics(const DataVector& db,
+        const real eps,
+        const unsigned int min_pts,
+        std::function<void(const DataPoint* p)> point_processed_callback) {
+        assert(eps >= 0 && "eps must not be negative");
+        assert(min_pts > 0 && "min_pts must be greater than 0");
+        DataVector ret;
+
+        for (auto p_it = db.begin(); p_it != db.end(); ++p_it) {
+            DataPoint* p = *p_it;
+
+            if (p->is_processed())
+                continue;
+
+            expand_cluster_order(db, p, eps, min_pts, ret, point_processed_callback);
         }
         return ret;
     }
