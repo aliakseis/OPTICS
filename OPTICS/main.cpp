@@ -10,9 +10,9 @@ Main cpp for testing OPTICS
 
 #include "OPTICS/optics.hpp"
 
-#include <barn_common.hpp>
-#include <barn_open_cv_common.hpp>
-#include <Persistence1D/src/persistence1d/persistence1d.hpp>
+//#include <barn_common.hpp>
+//#include <barn_open_cv_common.hpp>
+//#include <Persistence1D/src/persistence1d/persistence1d.hpp>
 
 #include "OPTICS_test.hpp"
 
