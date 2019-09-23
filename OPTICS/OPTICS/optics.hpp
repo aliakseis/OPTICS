@@ -314,17 +314,16 @@ namespace OPTICS {
      * @param min_pts The minimum number of points to be found within an epsilon-neigborhood.
      * @return Return the OPTICS ordered list of Data points with reachability-distances set.
      */
-    DataVector optics(DataVector& db, const real eps, const unsigned int min_pts) {
+    DataVector optics(const DataVector& db, const real eps, const unsigned int min_pts) {
         assert(eps >= 0 && "eps must not be negative");
         assert(min_pts > 0 && "min_pts must be greater than 0");
         DataVector ret;
 
-        for (auto p_it = db.begin(); p_it != db.end(); ++p_it) {
-            DataPoint* p = *p_it;
+        for (auto p : db) {
 
             if (p->is_processed()) {
                 continue;
-}
+            }
 
             expand_cluster_order(db, p, eps, min_pts, ret);
         }
@@ -352,12 +351,11 @@ namespace OPTICS {
         assert(min_pts > 0 && "min_pts must be greater than 0");
         DataVector ret;
 
-        for (auto p_it = db.begin(); p_it != db.end(); ++p_it) {
-            DataPoint* p = *p_it;
+        for (auto p : db) {
 
             if (p->is_processed()) {
                 continue;
-}
+            }
 
             expand_cluster_order(db, p, eps, min_pts, ret, point_processed_callback);
         }
