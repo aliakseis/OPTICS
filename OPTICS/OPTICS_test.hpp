@@ -81,28 +81,29 @@ struct Callback {
 
         // draw reachability line in histogram
         orig_hist->copyTo(show_hist);
-        Vec3b* show_hist_r_ptr = show_hist.ptr<Vec3b>(y);
+        auto* show_hist_r_ptr = show_hist.ptr<Vec3b>(y);
         for( int c=0; c < show_hist.cols; ++c) {
             show_hist_r_ptr[c] = Vec3b(255, 0, 0);
         }
 
         // draw resultset
         Mat3b resultset( testset->rows, testset->cols, Vec3b(0,0,0));
-        for( unsigned int c=0; c<result.size(); ++c) {
+        for(auto dp : result) {
             
-            const OPTICS::DataPoint* dp = result[c];
             const float rdist = dp->reachability_distance();
     
             Vec3b color = color_per_se_reachable;
 
-            if( 1 - (float)y/show_hist.rows >= rdist/max_reach_dist)
+            if( 1 - static_cast<float>(y)/show_hist.rows >= rdist/max_reach_dist) {
                 // reached
                 color = color_reached;
-            if( rdist == OPTICS::UNDEFINED)
+}
+            if( rdist == OPTICS::UNDEFINED) {
                 // unreachable
                 color = color_unreachable;
+}
             
-            resultset( (int)dp->data()[0], (int)dp->data()[1]) = color;
+            resultset( static_cast<int>(dp->data()[0]), static_cast<int>(dp->data()[1])) = color;
         }
 
         namedWindow( winname_resultset,  WINDOW_NORMAL);
@@ -121,12 +122,12 @@ struct Callback {
         // draw histogram marking bar
         for( int r=0; r < show_hist.rows; ++r) {
         for( unsigned int c=start; c < end; ++c) {
-            Vec3b* p = show_hist.ptr<Vec3b>(r);
+            auto* p = show_hist.ptr<Vec3b>(r);
             p[c] += Vec3b(0, 0, 192);
         }
         }
         // draw histogram threshold line
-        Vec3b* p = show_hist.ptr<Vec3b>( this->hist_thresh_row);
+        auto* p = show_hist.ptr<Vec3b>( this->hist_thresh_row);
         for( int c=0; c < show_hist.cols; ++c) {
             p[c] = Vec3b(255, 0, 0);
         }
@@ -141,24 +142,27 @@ struct Callback {
             const float rd = dp->reachability_distance();
 
             Vec3b color = color_per_se_reachable;
-            if( rd == OPTICS::UNDEFINED)
+            if( rd == OPTICS::UNDEFINED) {
                 // unreachable
                 color = color_unreachable;
+}
 
             if( start <= i && end >= i) {
                 // marked
                 color = color_marked;
 
-                if( rd > max_reach_dist - (float)this->hist_thresh_row/show_hist.rows * max_reach_dist)
+                if( rd > max_reach_dist - static_cast<float>(this->hist_thresh_row)/show_hist.rows * max_reach_dist) {
                     // marked,not reachable with given threshold
                     color = color_marked_reachable;
+}
 
-                if( rd == OPTICS::UNDEFINED)
+                if( rd == OPTICS::UNDEFINED) {
                     // unreachable
                     color = color_marked_unreachable;
+}
             }
             
-            resultset( (int)dp->data()[0], (int)dp->data()[1]) = color;
+            resultset( static_cast<int>(dp->data()[0]), static_cast<int>(dp->data()[1])) = color;
         }
 
         namedWindow( winname_resultset,  WINDOW_NORMAL);
@@ -170,10 +174,11 @@ struct Callback {
 // histogram window callback function
 void hist_mouse_callback( int evt, int x, int y, int flags, void* userdata) {
     
-    if( x < 0 || y < 0)
+    if( x < 0 || y < 0) {
         return;
+}
 
-    Callback* cb = (Callback*)userdata;
+    auto* cb = static_cast<Callback*>(userdata);
 
     if( evt == cv::EVENT_RBUTTONDOWN) {
         cb->set_reachability_line(y);
@@ -191,17 +196,17 @@ void hist_mouse_callback( int evt, int x, int y, int flags, void* userdata) {
 
 void test_optics( const Mat3b& testset,
                   float eps, 
-                  const unsigned int min_pts, 
-                  const float persistence, 
-                  const unsigned int n_clusters, 
-                  const bool use_n_clusters,
-                  const float outlier_threshold);
+                  unsigned int min_pts, 
+                  float persistence, 
+                  unsigned int n_clusters, 
+                  bool use_n_clusters,
+                  float outlier_threshold);
 OPTICS::DataVector scan_testset( const Mat3b& testset);
-Mat3b build_histogram( const float rows, const vector<float>& reachabilities);
+Mat3b build_histogram( float max_r_dist, const vector<float>& reachabilities);
 std::vector<unsigned int> find_k_histogram_peaks( const vector<OPTICS::real>& reachabilities,
-                                                  const uint n_clusters);
+                                                  uint n_clusters);
 std::vector<unsigned int> find_histogram_peaks( const vector<OPTICS::real>& reachabilities, 
-                                                const OPTICS::real persistence);
+                                                OPTICS::real persistence);
 vector<Mat3b> create_cluster_images( const vector<OPTICS::DataVector>& clusters, unsigned int rows, unsigned int cols);
 
 
@@ -217,16 +222,18 @@ void test_optics( const Mat3b& testset,
                   const float outlier_threshold) {
 
     // adjust epsilon
-    if( eps < 0) 
+    if( eps < 0) { 
         eps = std::numeric_limits<float>::max();
+}
 
     // print parameters
     cout << ">>> epsilon    : " << eps << endl;
     cout << ">>> min_pts    : " << min_pts << endl;
-    if( !use_n_clusters)
+    if( !use_n_clusters) {
         cout << ">>> persistence: " << persistence << endl;
-    else
+    } else {
         cout << ">>> n_clusters: " << n_clusters << endl;
+}
     cout << ">>> outlier threshold : " << outlier_threshold << endl;
 
     // scan test set
@@ -235,7 +242,7 @@ void test_optics( const Mat3b& testset,
     // shuffle data
     if( shuffle) {
         cout << "Shuffling...\n";
-        std::random_shuffle( db.begin(), db.end() );
+        std::shuffle( db.begin(), db.end() , std::mt19937(std::random_device()()));
     }
 
     cout << fixed;
@@ -248,8 +255,9 @@ void test_optics( const Mat3b& testset,
                                                 min_pts, 
                                                 [&n_processed, &db](const OPTICS::DataPoint* p){ 
                                                      
-                                                    if(n_processed % 100 == 0)
+                                                    if(n_processed % 100 == 0) {
                                                         cout << setprecision(2) << 100.0f * n_processed / db.size() << "% processed"<< "\n";
+}
                                                     ++n_processed;
                                                 });
 
@@ -283,9 +291,11 @@ void test_optics( const Mat3b& testset,
     std::sort( cluster_borders.begin(), cluster_borders.end());
 
     // draw cluster borders into histogram
-    for( auto it=cluster_borders.begin(); it!=cluster_borders.end(); ++it)
-        for( int r=0; r<hist.rows; ++r)
-            hist(r,*it) = color_hist_cluster_border;
+    for(std::_Vector_iterator<std::_Vector_val<std::_Simple_types<unsigned int> > >::value_type & cluster_border : cluster_borders) {
+        for( int r=0; r<hist.rows; ++r) {
+            hist(r,cluster_border) = color_hist_cluster_border;
+}
+}
 
     // create separate image for each cluster
     vector<OPTICS::DataVector> clusters = OPTICS::extract_clusters( result, cluster_borders, outlier_threshold);
@@ -324,8 +334,8 @@ void test_optics( const Mat3b& testset,
     destroyAllWindows();
 
     // cleanup
-    for( auto it = db.begin(); it!=db.end(); ++it) {
-        delete *it;
+    for(auto & it : db) {
+        delete it;
     }
 }
 
@@ -335,18 +345,20 @@ OPTICS::DataVector scan_testset( const Mat3b& testset) {
 
     cout << "Scanning " << testset.rows << " x " << testset.cols << " test set... ";
     OPTICS::DataVector db;
-    for( int r=0; r<testset.rows; ++r)
+    for( int r=0; r<testset.rows; ++r) {
     for( int c=0; c<testset.cols; ++c) {
-        if( r%50 == 0 && c==0)
+        if( r%50 == 0 && c==0) {
             cout << r << "   ";
+}
 
         if( testset( r, c)[0] > 128) {
-            OPTICS::DataPoint* p = new OPTICS::DataPoint();
-            p->data().push_back( (float)r);
-            p->data().push_back( (float)c);
+            auto* p = new OPTICS::DataPoint();
+            p->data().push_back( static_cast<float>(r));
+            p->data().push_back( static_cast<float>(c));
             db.push_back( p);
         }
     }
+}
     cout << endl;
     return db;
 }
@@ -356,16 +368,18 @@ OPTICS::DataVector scan_testset( const Mat3b& testset) {
 Mat3b build_histogram( const float max_r_dist, const vector<float>& reachabilities) {
     
     const float frows = std::min( static_cast<float>(max_hist_height), max_r_dist);
-    const unsigned int rows = static_cast<unsigned int>(frows);
+    const auto rows = static_cast<unsigned int>(frows);
 
     Mat3b ret( rows, reachabilities.size(), color_background);
     for( int c=0; c<ret.cols; ++c) {
         for( int r=0; r<ret.rows; ++r) {
             
-            if( (float)reachabilities[c]/rows > (float)(rows-r)/rows)
+            if( static_cast<float>(reachabilities[c])/rows > static_cast<float>(rows-r)/rows) {
                 ret(r,c) = color_hist_bar;
-            if( reachabilities[c] == OPTICS::UNDEFINED)
+}
+            if( reachabilities[c] == OPTICS::UNDEFINED) {
                 ret(r,c) = color_hist_unreachable;
+}
         }
     }
     return ret;
@@ -392,8 +406,9 @@ std::vector<unsigned int> find_k_histogram_peaks( const vector<OPTICS::real>& re
     p.GetPairedExtrema(extrema, 0);
 
     unsigned int n=1;
-    for( int i=extrema.size()-1; i>=0 && n<n_clusters; --i, ++n)
+    for( int i=extrema.size()-1; i>=0 && n<n_clusters; --i, ++n) {
         ret.push_back( extrema[i].MaxIndex);
+}
 
     return ret;
 }
@@ -427,13 +442,13 @@ std::vector<unsigned int> find_histogram_peaks( const vector<OPTICS::real>& reac
 vector<Mat3b> create_cluster_images( const vector<OPTICS::DataVector>& clusters, unsigned int rows, unsigned int cols) {
     vector<Mat3b> ret;
     
-    for( auto it=clusters.begin(); it!=clusters.end(); ++it) {
-        const OPTICS::DataVector& cluster = *it;
+    for(const auto & it : clusters) {
+        const OPTICS::DataVector& cluster = it;
         Mat3b mat( rows, cols, color_background);
 
-        for( unsigned int i=0; i<it->size(); ++i) {
+        for( unsigned int i=0; i<it.size(); ++i) {
             const OPTICS::DataPoint& p = *(cluster[i]);
-            mat( (int)p[0], (int)p[1]) = color_normal_point;
+            mat( static_cast<int>(p[0]), static_cast<int>(p[1])) = color_normal_point;
         }
         ret.push_back( mat);
     }

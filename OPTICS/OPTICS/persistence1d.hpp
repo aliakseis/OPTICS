@@ -5,7 +5,7 @@
 #ifndef PERSISTENCE_H
 #define PERSISTENCE_H
 
-#include <assert.h>
+#include <cassert>
 #include <algorithm>
 #include <iostream>
 #include <iterator>
@@ -25,20 +25,22 @@ namespace p1d
 */
 struct TIdxAndData
 {
-	TIdxAndData():Idx(-1),Data(0){}
+	TIdxAndData(){}
 
 	bool operator<(const TIdxAndData& other) const
 	{
-		if (Data < other.Data) return true;
-		if (Data > other.Data) return false;
+		if (Data < other.Data) { return true;
+}
+		if (Data > other.Data) { return false;
+}
 		return (Idx < other.Idx);
 	}
 
 	///The index of the vertex within the Data vector. 
-	int Idx;
+	int Idx{-1};
 
 	///Vertex data value from the original Data vector sent as an argument to RunPersistence.
-	float Data;
+	float Data{0};
 };
 
 
@@ -86,8 +88,10 @@ struct TPairedExtrema
 
 	bool operator<(const TPairedExtrema& other) const
 	{
-		if (Persistence < other.Persistence) return true;
-		if (Persistence > other.Persistence) return false;
+		if (Persistence < other.Persistence) { return true;
+}
+		if (Persistence > other.Persistence) { return false;
+}
 		return (MinIndex < other.MinIndex);
 	}
 };
@@ -107,12 +111,10 @@ class Persistence1D
 {
 public:
 	Persistence1D()
-	{
-	}
+	= default;
 
 	~Persistence1D()
-	{
-	}
+	= default;
 			
 	/*!
 		Call this function with a vector of one dimensional data to find extrema features in the data.
@@ -131,7 +133,8 @@ public:
 		Init();
 
 		//If a user runs this on an empty vector, then they should not get the results of the previous run.
-		if (Data.empty()) return false;
+		if (Data.empty()) { return false;
+}
 
 		CreateIndexValueVector();
 		Watershed();
@@ -152,12 +155,11 @@ public:
 	*/	
 	void PrintPairs(const std::vector<TPairedExtrema>& pairs) const 
 	{
-		for (std::vector<TPairedExtrema>::const_iterator it = pairs.begin(); 
-			it != pairs.end(); it++)
+		for (auto pair : pairs)
 		{
-			std::cout	<< "Persistence: " << (*it).Persistence
-						<< " minimum index: " << (*it).MinIndex
-						<< " maximum index: " << (*it).MaxIndex
+			std::cout	<< "Persistence: " << pair.Persistence
+						<< " minimum index: " << pair.MinIndex
+						<< " maximum index: " << pair.MaxIndex
 						<< std::endl;
 		}
 	}
@@ -208,20 +210,22 @@ public:
 		//make sure the user does not use previous results that do not match the data
 		pairs.clear();
 
-		if (PairedExtrema.empty() || threshold < 0.0) return false;
+		if (PairedExtrema.empty() || threshold < 0.0) { return false;
+}
 
-		std::vector<TPairedExtrema>::const_iterator lower_bound = FilterByPersistence(threshold);
+		auto lower_bound = FilterByPersistence(threshold);
 
-		if (lower_bound == PairedExtrema.end()) return false;
+		if (lower_bound == PairedExtrema.end()) { return false;
+}
 		
 		pairs = std::vector<TPairedExtrema>(lower_bound, PairedExtrema.end());
 		
 		if (matlabIndexing) //match matlab indices by adding one
 		{
-			for (std::vector<TPairedExtrema>::iterator p = pairs.begin(); p != pairs.end(); p++)
+			for (auto & pair : pairs)
 			{
-				(*p).MinIndex += MATLAB_INDEX_FACTOR;
-				(*p).MaxIndex += MATLAB_INDEX_FACTOR;			
+				pair.MinIndex += MATLAB_INDEX_FACTOR;
+				pair.MaxIndex += MATLAB_INDEX_FACTOR;			
 			}
 		}
 		return true;
@@ -244,17 +248,19 @@ public:
 		min.clear();
 		max.clear();
         
-		if (PairedExtrema.empty() || threshold < 0.0) return false;
+		if (PairedExtrema.empty() || threshold < 0.0) { return false;
+}
 		
 		min.reserve(PairedExtrema.size());
 		max.reserve(PairedExtrema.size());
 		
 		int matlabIndexFactor = 0;
-		if (matlabIndexing) matlabIndexFactor = MATLAB_INDEX_FACTOR;
+		if (matlabIndexing) { matlabIndexFactor = MATLAB_INDEX_FACTOR;
+}
 
-		std::vector<TPairedExtrema>::const_iterator lower_bound = FilterByPersistence(threshold);
+		auto lower_bound = FilterByPersistence(threshold);
 
-		for (std::vector<TPairedExtrema>::const_iterator p = lower_bound; p != PairedExtrema.end(); p++)
+		for (auto p = lower_bound; p != PairedExtrema.end(); p++)
 		{
 			min.push_back((*p).MinIndex + matlabIndexFactor);
 			max.push_back((*p).MaxIndex + matlabIndexFactor);
@@ -269,7 +275,8 @@ public:
 	*/
 	int GetGlobalMinimumIndex(const bool matlabIndexing = false) const
 	{
-		if (Components.empty()) return -1;
+		if (Components.empty()) { return -1;
+}
 
 		assert(Components.front().Alive);
 		if (matlabIndexing)
@@ -287,7 +294,8 @@ public:
 	*/
 	float GetGlobalMinimumValue() const
 	{
-		if (Components.empty()) return 0;
+		if (Components.empty()) { return 0;
+}
 
 		assert(Components.front().Alive);
 		return Components.front().MinValue;
@@ -305,7 +313,8 @@ public:
 	bool VerifyResults() 
 	{
 		bool flag = true; 
-		std::vector<int> min, max;
+		std::vector<int> min;
+		std::vector<int> max;
 		std::vector<int> combinedIndices;
 		
 		GetExtremaIndices(min, max);
@@ -319,16 +328,18 @@ public:
 		
 		//check the combined unique indices are equal to size of min and max
 		if (combinedIndices.size() != (min.size() + max.size()) ||
-			 std::binary_search(combinedIndices.begin(), combinedIndices.end(), globalMinIdx) == true)
+			 std::binary_search(combinedIndices.begin(), combinedIndices.end(), globalMinIdx))
 		{
 		   flag = false;
 		}
 
-		if ((globalMinIdx > (int)Data.size()-1) || (globalMinIdx < -1)) flag = false;
-		if (globalMinIdx == -1 && min.size() != 0) flag = false;
+		if ((globalMinIdx > static_cast<int>(Data.size())-1) || (globalMinIdx < -1)) { flag = false;
+}
+		if (globalMinIdx == -1 && !min.empty()) { flag = false;
+}
 		
-		std::vector<int>::iterator minUniqueEnd = std::unique(min.begin(), min.end());
-		std::vector<int>::iterator maxUniqueEnd = std::unique(max.begin(), max.end());
+		auto minUniqueEnd = std::unique(min.begin(), min.end());
+		auto maxUniqueEnd = std::unique(max.begin(), max.end());
 				
 		if (minUniqueEnd != min.end() ||
 			maxUniqueEnd != max.end() ||
@@ -389,7 +400,8 @@ protected:
 	*/
 	void MergeComponents(const int firstIdx, const int secondIdx)
 	{
-		int survivorIdx, destroyedIdx;
+		int survivorIdx;
+		int destroyedIdx;
 		//survivor - component whose hub is bigger
 		if (Components[firstIdx].MinValue < Components[secondIdx].MinValue)
 		{
@@ -564,7 +576,7 @@ protected:
 		Colors.resize(Data.size());
 		std::fill(Colors.begin(), Colors.end(), NO_COLOR);
 		
-		int vectorSize = (int)(Data.size()/RESIZE_FACTOR) + 1; //starting reserved size >= 1 at least
+		int vectorSize = static_cast<int>(Data.size()/RESIZE_FACTOR) + 1; //starting reserved size >= 1 at least
 		
 		Components.clear();
 		Components.reserve(vectorSize);
@@ -583,7 +595,8 @@ protected:
 	*/	
 	void CreateIndexValueVector()
 	{
-		if (Data.size()==0) return;
+		if (Data.empty()) { return;
+}
 				
 		for (std::vector<float>::size_type i = 0; i != Data.size(); i++)
 		{
@@ -591,7 +604,7 @@ protected:
 
 			//this is going to make problems
 			dataidxpair.Data = Data[i]; 
-			dataidxpair.Idx = (int)i; 
+			dataidxpair.Idx = static_cast<int>(i); 
 
 			SortedData.push_back(dataidxpair);
 		}
@@ -618,9 +631,9 @@ protected:
 			return;
 		}
 
-		for (std::vector<TIdxAndData>::iterator p = SortedData.begin(); p != SortedData.end(); p++)
+		for (auto & p : SortedData)
 		{
-			int i = (*p).Idx;
+			int i = p.Idx;
 
 			//left most vertex - no left neighbor
 			//two options - either local minimum, or extend component
@@ -637,7 +650,7 @@ protected:
 				
 				continue;
 			}
-			else if (i == Colors.size()-1) //right most vertex - look only to the left
+			if (i == Colors.size()-1) //right most vertex - look only to the left
 			{
 				if (Colors[i-1] == NO_COLOR) 
 				{
@@ -665,7 +678,8 @@ protected:
 			}
 			else if (Colors[i-1] != NO_COLOR && Colors[i+1] != NO_COLOR) //local maximum - merge components
 			{
-				int leftComp, rightComp; 
+				int leftComp;
+				int rightComp; 
 
 				leftComp = Colors[i-1];
 				rightComp = Colors[i+1]; 
@@ -705,7 +719,8 @@ protected:
 	*/
 	std::vector<TPairedExtrema>::const_iterator FilterByPersistence(const float threshold = 0) const
 	{		
-		if (threshold == 0 || threshold < 0) return PairedExtrema.begin();
+		if (threshold == 0 || threshold < 0) { return PairedExtrema.begin();
+}
 
 		TPairedExtrema searchPair; 
 		searchPair.Persistence = threshold;
@@ -723,7 +738,7 @@ protected:
 	bool VerifyAliveComponents()
 	{
 		//verify that the Alive component is component #0 (contains global minimum by definition)
-		if ((*Components.begin()).Alive != true) 
+		if (!(*Components.begin()).Alive) 
 		{		
 				
 #ifndef _DEBUG 
@@ -736,7 +751,7 @@ protected:
 		
 		for (std::vector<TComponent>::const_iterator it = Components.begin()+1; it != Components.end(); it++)
 		{
-			if ((*it).Alive == true) 
+			if ((*it).Alive) 
 			{
 							
 #ifndef _DEBUG 
@@ -751,5 +766,5 @@ protected:
 		return true;
 	}
 };
-}
+}  // namespace p1d
 #endif

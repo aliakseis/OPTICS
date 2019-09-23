@@ -137,7 +137,7 @@ inline T angle_diff( T angle1, T angle2) {
  * @return The value that would be returned by getch()
  */
 inline int nb_getch() {
-    return _kbhit() ? _getch() : 0;
+    return _kbhit() != 0 ? _getch() : 0;
 }
 
 
@@ -348,12 +348,13 @@ void get_digits(int* out_array, T i, int digit_count) {
  * returned.
  */
 uint next_pow_two_fast(uint num) {
-    uint j, k;
-    (j = num & 0xFFFF0000) || (j = num);
-    (k = j   & 0xFF00FF00) || (k = j);
-    (j = k   & 0xF0F0F0F0) || (j = k);
-    (k = j   & 0xCCCCCCCC) || (k = j);
-    (j = k   & 0xAAAAAAAA) || (j = k);
+    uint j;
+    uint k;
+    ((j = num & 0xFFFF0000) != 0u) || ((j = num) != 0u);
+    ((k = j   & 0xFF00FF00) != 0u) || ((k = j) != 0u);
+    ((j = k   & 0xF0F0F0F0) != 0u) || ((j = k) != 0u);
+    ((k = j   & 0xCCCCCCCC) != 0u) || ((k = j) != 0u);
+    ((j = k   & 0xAAAAAAAA) != 0u) || ((j = k) != 0u);
     return j << 1;
 }
 
@@ -384,7 +385,7 @@ std::string read_line() {
     unsigned int cursor(0);
 
     // non-blocking getch
-    int kbval ( _kbhit() ? _getch() : 0);
+    int kbval ( _kbhit() != 0 ? _getch() : 0);
 
     while( 13!=kbval ) {
         // until ENTER is pressed
@@ -398,7 +399,7 @@ std::string read_line() {
             // ORDINARY CHARACTERS
             ret[cursor++] = unsigned char(kbval);
         }
-        kbval = _kbhit() ? _getch() : 0;
+        kbval = _kbhit() != 0 ? _getch() : 0;
     }
     return std::string(ret);
 }
@@ -477,8 +478,9 @@ bool getlines_from_file( const std::string& filename,
         ret = false;
     }
     std::string line;
-    while( getline(in_stream, line))
+    while( getline(in_stream, line)) {
         callback(line);
+}
     if(in_stream.bad()) {
         error_read_callback(filename);
         ret = false;
@@ -518,8 +520,9 @@ bool to_file( const std::string& filename,
     } else {
         for( auto it=container.begin(); it!=container.end(); ++it) {
             fstream << *it;
-            if( std::next(it) != container.end())
+            if( std::next(it) != container.end()) {
                     fstream << delimeter;
+}
 
             if( fstream.bad()) {
                 error_write_callback(filename);
@@ -761,7 +764,7 @@ std::string app_path( bool append_app_name=false) {
     char buffer[512];
     std::string ret;
 
-    GetModuleFileName( NULL, buffer, MAX_PATH );
+    GetModuleFileName( nullptr, buffer, MAX_PATH );
     ret = std::string(buffer);
 
     if( !append_app_name) {
@@ -810,19 +813,23 @@ bool savePPM( const char* name, unsigned char *pixels, unsigned int width, unsig
     auto max_color_cursor_pos = file.tellp();
     file << "000" << std::endl;
 
-    if( adaptive_max_color)
+    if( adaptive_max_color) {
         max_color = 0;
+}
 
     // style pixmap
-    for( int y=height-1; y>=0; y--)
+    for( int y=height-1; y>=0; y--) {
         for( unsigned int x=0; x<3*width; x++) {
             unsigned int pixel_index = y*(3*width) + x;
-            file << (int)pixels[pixel_index] << "\t";
-            if(pixel_index % (3*width) == 0)
+            file << static_cast<int>(pixels[pixel_index]) << "\t";
+            if(pixel_index % (3*width) == 0) {
                 file << std::endl;
-            if( adaptive_max_color && (int)pixels[pixel_index] > max_color)
-                max_color = (int)pixels[pixel_index];
+}
+            if( adaptive_max_color && static_cast<int>(pixels[pixel_index]) > max_color) {
+                max_color = static_cast<int>(pixels[pixel_index]);
+}
         }
+}
 
     // set max color
     file.seekp( max_color_cursor_pos, std::ios::beg );
@@ -906,8 +913,9 @@ std::vector<std::vector<size_t>> subvector_indices( size_t vector_length, size_t
         ret.push_back( indices);
 
         off = 1;
-        while( off <= subvectors_length && indices[subvectors_length-off] == vector_length-off)
+        while( off <= subvectors_length && indices[subvectors_length-off] == vector_length-off) {
             ++off;
+}
         // *** off at the right position to raise ***
         if(off <= subvectors_length) {
             size_t index_to_raise = subvectors_length - off;
@@ -945,7 +953,7 @@ std::vector<T> resize_interpolated( const std::vector<T>& v, uint new_size) {
     return ret;
 }
 
-#include <assert.h>
+#include <cassert>
 #include <vector>
 /** Retrieves the normalized circular delayed cross correlatipon series of two given vectors.
  * The function calculates means and deviations under the hood, so maybe, if you have

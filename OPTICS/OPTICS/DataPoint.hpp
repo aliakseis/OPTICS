@@ -16,7 +16,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 //INCLUDES C/C++ standard library (and other external libraries)
 
-#include <assert.h>
+#include <cassert>
 #include <vector>
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -31,14 +31,14 @@ namespace OPTICS {
 
         std::vector<real> _data;        ///< The data elements.
         real _reachability_distance;    ///< The reachability distance.
-        bool _is_processed;             ///< A flag indicating if the object is already processed.
+        bool _is_processed{ false};             ///< A flag indicating if the object is already processed.
     
     public: // ctor & dtor
 
         /** Main constructor.
          * Sets the reachability distance to OPTICS::UNDEFINED and sets the processed-flag to false.
          */
-        DataPoint() : _data( std::vector<real>()), _reachability_distance( UNDEFINED), _is_processed( false) 
+        DataPoint() : _data( std::vector<real>()), _reachability_distance( UNDEFINED) 
         {}
 
         //
@@ -47,7 +47,7 @@ namespace OPTICS {
 
         /// Destructor.
         virtual ~DataPoint() 
-        {}
+        = default;
 
     public: // methods
 
@@ -125,7 +125,7 @@ namespace OPTICS {
         //
 
         /// Destructor.
-        ~LabelledDataPoint() 
+        ~LabelledDataPoint() override 
         {}
 
     public: // methods

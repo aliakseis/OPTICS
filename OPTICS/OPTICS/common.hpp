@@ -22,7 +22,7 @@
 namespace OPTICS {
 
     /// typedef for abstracting single/double precision. Change at will.
-    typedef float real;
+    using real = float;
     
     /// "Undefined" value for distance measures (which are always >= 0 by nature).
     const real UNDEFINED = std::numeric_limits<real>::max();
@@ -41,6 +41,6 @@ namespace OPTICS {
     typedef std::set<DataPoint*, Comp_DataPoint_Ptr_f> DataSet;
 
     /// A vector of Pointers to DataPoints.
-    typedef std::vector<DataPoint*> DataVector;
+    using DataVector = std::vector<DataPoint *>;
 
 } // END namespace OPTICS

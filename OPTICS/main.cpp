@@ -23,7 +23,7 @@ using namespace std;
 const string image_file = "nested.png";
 
 
-void main() {
+int main() {
     
     Mat3b testset = imread( image_file);
     //noise( testset, 0.05f, Vec3b(255,255,255));

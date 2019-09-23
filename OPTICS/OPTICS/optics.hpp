@@ -49,7 +49,7 @@ namespace OPTICS {
     real squared_distance(const DataPoint* a, const DataPoint* b) {
         const std::vector<real>& a_data = a->data();
         const std::vector<real>& b_data = b->data();
-        const unsigned int vec_size = static_cast<unsigned int>(a_data.size());
+        const auto vec_size = static_cast<unsigned int>(a_data.size());
         assert(vec_size == b_data.size() && "Data-vectors of both DataPoints must have same dimensionality");
         real ret(0);
 
@@ -75,11 +75,10 @@ namespace OPTICS {
     void update_seeds( const DataVector& N_eps, const DataPoint* center_object, const real c_dist, DataSet& o_seeds) {
         assert( c_dist != OPTICS::UNDEFINED && "the core distance must be set <> UNDEFINED when entering update_seeds");
         
-        for( DataVector::const_iterator it=N_eps.begin(); it!=N_eps.end(); ++it) {
-            DataPoint* o = *it;
-
-            if( o->is_processed())
+        for(auto o : N_eps) {
+            if( o->is_processed()) {
                 continue;
+}
 
             const real new_r_dist = std::max( c_dist, squared_distance( center_object, o));
             // *** new_r_dist != UNDEFINED ***
@@ -112,8 +111,7 @@ namespace OPTICS {
 
         const real eps_sq = eps*eps;
 
-        for( auto q_it=db.begin(); q_it!=db.end(); ++q_it) {
-            DataPoint* q = *q_it;
+        for(auto q : db) {
             if( squared_distance( p, q) <= eps_sq) {
                 ret.push_back( q);
             }
@@ -151,12 +149,13 @@ namespace OPTICS {
         assert( lhs->data().size() == rhs->data().size() && "Comparing DataPoints requires them to have same dimensionality");
 
         //return lhs->reachability_distance() < rhs->reachability_distance();    
-        if( lhs->reachability_distance() < rhs->reachability_distance())
+        if( lhs->reachability_distance() < rhs->reachability_distance()) {
             return true;
-        else if( lhs->reachability_distance() == rhs->reachability_distance() && lhs < rhs)
+        } if( lhs->reachability_distance() == rhs->reachability_distance() && lhs < rhs) {
             return true;
-        else /*lhs->reachability_distance() == rhs->reachability_distance() && lhs >= rhs || lhs->reachability_distance() > rhs->reachability_distance()*/
+        } else { /*lhs->reachability_distance() == rhs->reachability_distance() && lhs >= rhs || lhs->reachability_distance() > rhs->reachability_distance()*/
             return false;
+}
     }
 
 
@@ -178,10 +177,11 @@ namespace OPTICS {
      */
     std::vector<DataVector> extract_clusters( const DataVector& result, const std::vector<unsigned int>& cluster_borders, real outlier_threshold) {
         std::vector<DataVector> ret;
-        ret.push_back( DataVector()); // outlier container
+        ret.emplace_back(); // outlier container
     
-        if( outlier_threshold <= 0)
+        if( outlier_threshold <= 0) {
             outlier_threshold = std::numeric_limits<real>::max();
+}
     
     
         for( unsigned int i=0; i<=cluster_borders.size(); ++i) {
@@ -226,8 +226,9 @@ namespace OPTICS {
         p->processed(true);
         o_ordered_vector.push_back(p);
 
-        if (core_dist_p == OPTICS::UNDEFINED)
+        if (core_dist_p == OPTICS::UNDEFINED) {
             return;
+}
 
         DataSet seeds;
         update_seeds(N_eps, p, core_dist_p, seeds);
@@ -278,8 +279,9 @@ namespace OPTICS {
         o_ordered_vector.push_back(p);
         point_processed_callback(p);
 
-        if (core_dist_p == OPTICS::UNDEFINED)
+        if (core_dist_p == OPTICS::UNDEFINED) {
             return;
+}
 
         DataSet seeds;
         update_seeds(N_eps, p, core_dist_p, seeds);
@@ -320,8 +322,9 @@ namespace OPTICS {
         for (auto p_it = db.begin(); p_it != db.end(); ++p_it) {
             DataPoint* p = *p_it;
 
-            if (p->is_processed())
+            if (p->is_processed()) {
                 continue;
+}
 
             expand_cluster_order(db, p, eps, min_pts, ret);
         }
@@ -352,8 +355,9 @@ namespace OPTICS {
         for (auto p_it = db.begin(); p_it != db.end(); ++p_it) {
             DataPoint* p = *p_it;
 
-            if (p->is_processed())
+            if (p->is_processed()) {
                 continue;
+}
 
             expand_cluster_order(db, p, eps, min_pts, ret, point_processed_callback);
         }
