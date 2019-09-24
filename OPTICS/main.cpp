@@ -20,12 +20,12 @@ using namespace cv;
 using namespace std;
 
 
-const string image_file = "nested.png";
+const char image_file[] = "nested.png";
 
 
-int main() {
+int main(int argc, char** argv) {
     
-    Mat3b testset = imread( image_file);
+    Mat3b testset = imread((argc >= 2)? argv[1] : image_file);
     //noise( testset, 0.05f, Vec3b(255,255,255));
     //testset = testset.t();
 
