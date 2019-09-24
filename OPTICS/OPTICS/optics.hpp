@@ -54,7 +54,8 @@ namespace OPTICS {
         real ret(0);
 
         for (unsigned int i = 0; i < vec_size; ++i) {
-            ret += std::pow(a_data[i] - b_data[i], 2);
+            const real dist = a_data[i] - b_data[i];
+            ret += dist * dist;
         }
         //return std::sqrt( ret);
         return ret;
