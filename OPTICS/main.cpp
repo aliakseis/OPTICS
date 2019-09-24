@@ -34,7 +34,7 @@ int main() {
         float eps= -1;
         unsigned int min_pts;
         float persistence = -1;
-        unsigned int n_clusters;
+        unsigned int n_clusters = 1;
         bool use_n_clusters;
         float outlier_threshold;
         cout << "epsilon : "; cin >> eps;

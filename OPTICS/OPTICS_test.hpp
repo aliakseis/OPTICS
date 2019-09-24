@@ -247,7 +247,7 @@ void test_optics( const Mat3b& testset,
     // run optics
     unsigned int n_processed = 0;
     cout << "\nRunning OPTICS with " << db.size() << " samples...\n";
-    OPTICS::DataVector result = OPTICS::optics( db, 
+    const OPTICS::DataVector result = OPTICS::optics( db, 
                                                 eps, 
                                                 min_pts, 
                                                 [&n_processed, &db](const OPTICS::DataPoint* p){ 
